@@ -1,55 +1,42 @@
 import os
 import csv
-import ntpath
+import hashlib
 
-def find_duplicates():
+def hash_file(filename):
+    """"This function returns the SHA-1 hash
+    of the file passed into it"""
+    h = hashlib.sha1()
+    with open(filename,'rb') as file:
+        chunk = 0
+        while chunk != b'':
+            chunk = file.read(1024)
+            h.update(chunk)
+    return h.hexdigest() 
 
-    # the folder path
-    path = './images'
+def delete_duplicate_images():
+    seen_files_dic = {}   # {hash: {name: filename}}
+  
+    removed_files = {}    # Track removed files and line numbers
 
-    seen_files_dic = {}   # {filename: line_num}
-    duplicates_dic = {}   # {filename: line_num}
-
-    with open('files.csv', 'r', newline='') as f:
+    with open('files.csv', 'r') as f:
         csvreader = csv.reader(f)
-        all_rows = list(csvreader)
+        for i, row in enumerate(csvreader):
+            file_name = row[0]
+            if not os.path.isfile(file_name):
+                continue
+            file_hash = hash_file(file_name)
+            if file_hash not in seen_files_dic:
+                seen_files_dic[file_hash] = {file_name: i}
+            else:
+                os.remove(file_name)
+                removed_files[file_name] = (file_hash, i) 
 
-    # Loop to find the duplicate paths    
-    for i, row in enumerate(all_rows):
-        # assuming full directory with filename is in the first cell
-        full_file_directory = row[0]
-
-        # getting filename only without the prefix directory
-        file_directory = ntpath.basename(full_file_directory)
-
-        # check if file exists in the folder
-        if not os.path.isfile(path + '/' + file_directory):
-            continue
-            
-        # Check for duplicates
-        if full_file_directory not in seen_files_dic:
-            seen_files_dic[full_file_directory] = i
-        else:
-            duplicates_dic[full_file_directory] = i
-
-    # Write duplicate paths and line numbers to 'duplicates.csv' 
-    with open('duplicates.csv', 'w', newline='') as out:
+    # Write removed files hashes and line numbers
+    with open('deleted_files.csv', 'w') as out:
         csvwriter = csv.writer(out)
-
-        # headings
-        csvwriter.writerow(['Duplicate File', 'Line Number'])
-
-        for filename, line_num in duplicates_dic.items():
-            csvwriter.writerow([filename, line_num])
-            
-    # Write non-duplicate rows to 'no_duplicates.csv'
-    with open('no_duplicates.csv', 'w', newline='') as out:
-        csvwriter = csv.writer(out)
-
-        for i, row in enumerate(all_rows):
-            if i not in duplicates_dic.values():
-                csvwriter.writerow(row)
-
-
+        csvwriter.writerow(['File Name', 'File Hash', 'Line Number'])
+        for f_name, (f_hash, line_num) in removed_files.items():
+            csvwriter.writerow([f_name, f_hash, line_num])
+   
 if __name__ =='__main__':
-    find_duplicates()
+    delete_duplicate_images()
