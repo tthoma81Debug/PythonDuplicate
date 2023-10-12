@@ -1,0 +1,23 @@
+The way it works:
+
+ 
+
+1. The `hash_file` function receives a filename and returns the SHA-1 hash of the file's content. This function reads the file in binary mode and reads it chunk by chunk to create a hash. This method works for large files as well if the file is too large to fit in memory.
+
+2. `delete_duplicate_images` function is the main function acting as follows:
+    - `{hash: {name: filename}}` is a dictionary that stores the hashes of the image files as keys and their names along with their line numbers in the `files.csv` file as values.
+    - It reads the `files.csv` file line by line. Each line is assumed to contain the name (path) of each image file.
+    - For each filename, it checks if the file exists. If not, it skips to the next file.
+    - If the file exists, it calculates the file’s hash using the `hash_file` function.
+    - If the calculated hash value is not already in the dictionary, the hash is added to the dictionary with the corresponding file name and its line number.
+    - If it is already in the dictionary, it means the image is a duplicate. Then it removes the file and records it in the `removed_files` dictionary with the filename as key and a tuple containing the hash and line number as its value.
+
+3. After scanning all the image files, it writes the file name, hash, and line number of the deleted (duplicate) files into `deleted_files.csv`.
+
+4. By running this script, duplicates of image files will be detected by their content (not by filename) and removed. Also, a record of information about deleted (duplicate) files is created.
+
+This script should scan all the images, find duplicates by their content, delete the duplicates, and log the deleted duplicates in a .csv file. 
+
+
+Cool Fact:
+We are using a dictionary here. The dictionary in Python is a built-in data structure that can be used to store a collection of values. In our code, we are using it to map a hash value (key) to a file name and its line number (value). A particular characteristic of dictionary keys is that they must be unique, which makes them ideal for efficiently checking if a hash already exists or not.
